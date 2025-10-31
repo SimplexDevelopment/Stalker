@@ -24,10 +24,17 @@ public class CommonEventBus {
         Singletons.AUDIOS = new AudioStorage();
         Singletons.SCHEDULER = new TaskScheduler();
         event.addCategory(Stalker.MODID, "Stalker", "Stalker Related Audio Stuff", null);
+
+        Singletons.getRecordingApi().ifPresent(api ->
+                api.loadNamespaceAudios(Stalker.MODID, (audio) ->
+                        Singletons.getAudioStorage().ifPresent(storage -> {
+            storage.addAudio(audio);
+            Stalker.logger().info("Loaded audio from storage: {}", audio.getId());
+        })));
     }
 
     @SubscribeEvent
-    private static void onAudioRecordedEvent(AudioRecordedEvent event){
+    public static void onAudioRecordedEvent(AudioRecordedEvent event){
         if(event.getAudio().getFilterResult() == IRecordedAudio.FilterResult.PASSED){
             if (Singletons.getAudioStorage().orElseThrow().getTotalAudioCount() >= 256){
                 for (int i = 0; i <= Singletons.getAudioStorage().orElseThrow().getTotalAudioCount() - 255; i++) {
@@ -39,7 +46,7 @@ public class CommonEventBus {
     }
 
     @SubscribeEvent
-    private static void onAudioLoadedEvent(AudioLoadedEvent event){
+    public static void onAudioLoadedEvent(AudioLoadedEvent event){
         if(Singletons.getAudioStorage().orElseThrow().getTotalAudioCount() < 256 &&
                 event.getLoadReason() == AudioLoadedEvent.LoadType.NAMESPACE &&
                 event.getNamespace().equals(Stalker.MODID)) {
